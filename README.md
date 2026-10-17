@@ -72,3 +72,9 @@ This repository is configured to deploy directly to [Netlify](https://www.netlif
 | Shutter Button | GPIO 0 (BOOT) |
 | Flash LED | GPIO 2 |
 | WS2812 RGB Status LED | GPIO 48 |
+
+---
+
+## 📦 Hardware Bill of Materials (BOM) & 3D Print Build
+Looking to build your own standalone handheld body with battery & 3D printed enclosure?
+Check out the full [Hardware BOM & Buying Guide](file:///c:/Users/hahah/Documents/ESP32%20Retro%20Cam/HARDWARE_BOM.md) with Shopee/Thai electronics search keywords and wiring diagrams!
