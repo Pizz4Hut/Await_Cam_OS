@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Await Camera - Cloud Gallery (Netlify Edition)</title>
+  <style>
+    :root {
+      --bg: #14110f;
+      --card-bg: #221c17;
+      --paper: #f7f1e5;
+      --accent: #d3733b;
+      --accent-hover: #e8864e;
+      --text-dim: #9e9385;
+      --border: #3b322a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--paper);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 80px;
+      background-image: radial-gradient(#261f1a 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    header {
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto 30px;
+      border-bottom: 2px dashed var(--border);
+      padding-bottom: 24px;
+    }
+    .brand {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+      font-size: 2.3rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0px #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .tagline {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 900px;
+      margin: 0 auto 30px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .counter-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .counter-wheel {
+      background: #080605;
+      color: #ffcc00;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 1.4rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 2px solid #5a4b3d;
+      box-shadow: inset 0 2px 6px #000;
+    }
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-refresh {
+      background: #2b231d;
+      color: var(--paper);
+      border: 1px solid var(--border);
+    }
+    .btn-refresh:hover { background: #3d3229; }
+    .btn-refresh.loading { opacity: 0.6; pointer-events: none; }
+    .filter-selector {
+      background: #181310;
+      color: var(--paper);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      outline: none;
+      cursor: pointer;
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 26px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .film-frame {
+      background: #fbf9f4;
+      border-radius: 6px;
+      padding: 14px 14px 18px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+    }
+    .film-frame:hover {
+      transform: translateY(-4px) rotate(-0.5deg);
+      box-shadow: 0 16px 35px rgba(0,0,0,0.8);
+    }
+    .photo-container {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: #111;
+      border-radius: 3px;
+      position: relative;
+    }
+    .photo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: filter 0.3s ease;
+    }
+    /* Film Presets */
+    .filter-vintage { filter: sepia(0.28) contrast(1.18) saturate(1.22) brightness(0.96) hue-rotate(-8deg); }
+    .filter-warm { filter: sepia(0.35) saturate(1.3) contrast(1.1) brightness(1.02); }
+    .filter-bw { filter: grayscale(1) contrast(1.3) brightness(0.95); }
+    .filter-none { filter: none; }
+
+    .photo-meta {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #333;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .photo-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #2b221d;
+    }
+    .photo-date {
+      font-size: 0.75rem;
+      color: #777;
+    }
+    .btn-dl {
+      background: var(--accent);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-dl:hover { background: var(--accent-hover); }
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-dim);
+      grid-column: 1 / -1;
+    }
+    .empty-icon { font-size: 3.5rem; margin-bottom: 12px; }
+
+    /* Lightbox Modal */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .lightbox.active { display: flex; }
+    .lightbox-content {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: 6px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      color: #fff;
+      font-size: 2.5rem;
+      cursor: pointer;
+      font-family: sans-serif;
+    }
+    .alert-banner {
+      display: none;
+      background: #8c2a2a;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      max-width: 900px;
+      margin: 0 auto 20px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">📷 Await Camera</div>
+    <div class="tagline">Cloud Film Roll &bull; ESP32-S3 OV5640 &bull; Netlify Edition</div>
+  </header>
+
+  <div id="securityAlert" class="alert-banner">
+    ⚠️ <strong>กำลังรอการปลดล็อค Resource list บน Cloudinary:</strong><br>
+    กรุณาไปที่ <a href="https://console.cloudinary.com" target="_blank" style="color:#ffd700; text-decoration:underline;">Cloudinary Console</a> 
+    > <strong>Settings ⚙️</strong> > <strong>Security</strong> > เลื่อนลงมาที่ <strong>Restricted media types</strong> > เอาติ๊กถูกที่ <strong>Resource list</strong> ออก > กด <strong>Save</strong> เพื่อเปิดการเข้าถึงอัลบั้มสาธารณะครับ
+  </div>
+
+  <div class="status-bar">
+    <div class="counter-group">
+      <div class="counter-wheel" id="photoCount">00</div>
+      <div>
+        <div style="font-size:0.85rem; color:var(--text-dim);">Cloud Photos</div>
+        <strong style="color:var(--paper);" id="statusText">กำลังโหลดม้วนฟิล์ม...</strong>
+      </div>
+    </div>
+    <div class="controls-group">
+      <select id="filmFilterSelect" class="filter-selector" onchange="changeFilter(this.value)">
+        <option value="filter-vintage">🎞️ Vintage 90s Film</option>
+        <option value="filter-warm">☀️ Warm Amber Golden</option>
+        <option value="filter-bw">🖤 B&W 400TX</option>
+        <option value="filter-none">🌿 Raw Sensor (Original)</option>
+      </select>
+      <button class="btn btn-refresh" id="btnRefresh" onclick="fetchPhotos()">🔄 รีเฟรช</button>
+    </div>
+  </div>
+
+  <main class="gallery-grid" id="galleryGrid">
+    <div class="empty-state">
+      <div class="empty-icon">⏳</div>
+      <h3>กำลังโหลดรูปภาพจาก Cloud...</h3>
+    </div>
+  </main>
+
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-content filter-vintage" id="lightboxImg" src="">
+  </div>
+
+  <script>
+    const CLOUD_NAME = "kv80ayfn";
+    const TAG_NAME = "await_cam";
+    let currentFilter = "filter-vintage";
+
+    async function fetchPhotos() {
+      const btn = document.getElementById("btnRefresh");
+      const grid = document.getElementById("galleryGrid");
+      const countEl = document.getElementById("photoCount");
+      const statusText = document.getElementById("statusText");
+      const alertEl = document.getElementById("securityAlert");
+
+      btn.classList.add("loading");
+      btn.innerText = "กำลังโหลด...";
+
+      // Cloudinary Resource List endpoint for tag
+      const url = `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${TAG_NAME}.json?t=${Date.now()}`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 404) {
+            alertEl.style.display = "block";
+          }
+          throw new Error(`HTTP ${res.status}`);
+        }
+        alertEl.style.display = "none";
+        const data = await res.json();
+        const resources = data.resources || [];
+
+        countEl.innerText = String(resources.length).padStart(2, '0');
+        statusText.innerText = `${resources.length} รูปในม้วนฟิล์มคลาวด์`;
+
+        if (resources.length === 0) {
+          grid.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📷</div>
+              <h3>ยังไม่มีรูปภาพบน Cloud</h3>
+              <p style="margin-top:8px;">กดปุ่ม BOOT บนกล้อง ESP32-S3 เพื่อถ่ายรูปและอัปโหลดขึ้นมาได้เลย!</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Sort latest first
+        resources.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        grid.innerHTML = resources.map((item, index) => {
+          const imgUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${item.version}/${item.public_id}.${item.format}`;
+          const dateStr = new Date(item.created_at).toLocaleDateString("th-TH", {
+            day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+          });
+          const expNum = String(resources.length - index).padStart(2, '0');
+
+          return `
+            <div class="film-frame" onclick="openLightbox('${imgUrl}')">
+              <div class="photo-container">
+                <img src="${imgUrl}" class="photo-img ${currentFilter}" loading="lazy" alt="Photo ${expNum}">
+              </div>
+              <div class="photo-meta">
+                <div>
+                  <div class="photo-title">EXP #${expNum}</div>
+                  <div class="photo-date">${dateStr}</div>
+                </div>
+                <a href="${imgUrl}" class="btn-dl" download target="_blank" onclick="event.stopPropagation()">⬇️ โหลด</a>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+      } catch (err) {
+        console.warn("Fetch error:", err);
+        statusText.innerText = "กำลังรอกล้องส่งภาพแรก...";
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">☁️</div>
+            <h3>พร้อมรับภาพถ่ายจาก Await Camera</h3>
+            <p style="margin-top:8px;">เปิดสวิตช์กล้อง ต่อ Wi-Fi บ้าน แล้วกดชัตเตอร์เพื่อส่งรูปแรกขึ้นมาได้เลยครับ!</p>
+          </div>
+        `;
+      } finally {
+        btn.classList.remove("loading");
+        btn.innerText = "🔄 รีเฟรช";
+      }
+    }
+
+    function changeFilter(filterClass) {
+      currentFilter = filterClass;
+      document.querySelectorAll(".photo-img, #lightboxImg").forEach(img => {
+        img.className = img.className.replace(/filter-\w+/g, '') + " " + filterClass;
+      });
+    }
+
+    function openLightbox(url) {
+      const modal = document.getElementById("lightbox");
+      const img = document.getElementById("lightboxImg");
+      img.src = url;
+      img.className = "lightbox-content " + currentFilter;
+      modal.classList.add("active");
+    }
+
+    function closeLightbox() {
+      document.getElementById("lightbox").classList.remove("active");
+    }
+
+    // Auto fetch on load and every 15s
+    fetchPhotos();
+    setInterval(fetchPhotos, 15000);
+  </script>
+</body>
+</html>
