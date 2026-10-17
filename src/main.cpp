@@ -229,7 +229,7 @@ bool uploadToCloudinary(camera_fb_t *fb, const char* filename) {
   // Send HTTP Headers
   client.printf("POST /v1_1/%s/image/upload HTTP/1.1\r\n", CLOUD_NAME);
   client.printf("Host: %s\r\n", CLOUDINARY_HOST);
-  client.println("User-Agent: ESP32-Await-Cam");
+  client.println("User-Agent: ESP32-Later-Cam");
   client.printf("Content-Type: multipart/form-data; boundary=%s\r\n", boundary);
   client.printf("Content-Length: %u\r\n", totalLen);
   client.println("Connection: close\r\n");
@@ -355,7 +355,7 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   Serial.println("\n======================================");
-  Serial.println("   Await Camera - Cloud + SD Edition   ");
+  Serial.println("     Later Cam - Cloud + SD Edition    ");
   Serial.println("======================================");
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);

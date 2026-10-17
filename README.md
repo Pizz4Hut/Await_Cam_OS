@@ -1,4 +1,4 @@
-# Await Camera OS 📷☁️
+# Later Cam OS 📷☁️
 
 **DIY Vintage Analog Emulation Camera powered by ESP32-S3 (N16R8), OV5640 Sensor & Cloud Integration.**
 
@@ -9,7 +9,7 @@
 - **Local Storage**: MicroSD Card support via `SD_MMC` 1-bit high-speed interface (with FFat Flash fallback).
 - **Cloud Auto-Upload**: Automatically uploads captured photos over Home Wi-Fi to Cloudinary using HTTPS.
 - **Netlify Web Gallery**: Live responsive retro film gallery with vintage film CSS filters, lightbox view, and direct download links.
-- **Physical Shutter**: BOOT button (GPIO 0) with 90ms shutter flash and RGB status feedback.
+- **Physical Shutter**: BOOT button (GPIO 0) with 80ms shutter flash and RGB status feedback.
 
 ---
 
@@ -17,9 +17,9 @@
 This repository is configured to deploy directly to [Netlify](https://www.netlify.com/):
 1. Log in to Netlify.
 2. Click **"Add new site"** > **"Import an existing project"** > **GitHub**.
-3. Select this repository: `Pizz4Hut/Await_Cam_OS`.
+3. Select this repository: `Pizz4Hut/Await_Cam_OS` (or updated repo name).
 4. Leave build command empty and publish directory as `/` (Root).
-5. Click **Deploy Await_Cam_OS**!
+5. Click **Deploy**!
 
 ---
 
