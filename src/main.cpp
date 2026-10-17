@@ -158,10 +158,10 @@ bool initCamera() {
   config.xclk_freq_hz = 10000000;
   config.frame_size   = FRAMESIZE_UXGA; // 1600x1200
   config.pixel_format = PIXFORMAT_JPEG;
-  config.grab_mode    = CAMERA_GRAB_WHEN_EMPTY;
+  config.grab_mode    = CAMERA_GRAB_LATEST; // Always grab the freshest real-time frame
   config.fb_location  = CAMERA_FB_IN_PSRAM;
   config.jpeg_quality = 12;
-  config.fb_count     = 1;
+  config.fb_count     = 2; // Double buffering for zero lag
 
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
@@ -300,10 +300,21 @@ void takePhoto() {
 
   Serial.printf("\n[Shutter] Capturing photo %s...\n", filename);
 
-  // Shutter Flash
-  triggerShutterFlash();
+  // 1. Flush any stale frame in DMA buffer to ensure 100% live capture
+  camera_fb_t *stale_fb = esp_camera_fb_get();
+  if (stale_fb) {
+    esp_camera_fb_return(stale_fb);
+  }
 
+  // 2. Pulse flash during capture
+  ledcWrite(LED_PWM_CHANNEL, 255);
+
+  // 3. Capture fresh frame
   camera_fb_t *fb = esp_camera_fb_get();
+
+  // 4. Turn off flash immediately
+  ledcWrite(LED_PWM_CHANNEL, 0);
+
   if (!fb) {
     Serial.println("Error: Failed to capture frame from OV5640.");
     return;
@@ -375,13 +386,11 @@ void setup() {
 }
 
 void loop() {
-  // Button Debounce & Trigger
+  // Button Debounce & Instant Shutter Trigger
   static int lastStableState = HIGH;
   static int prevRawReading = HIGH;
   static unsigned long lastDebounceTime = 0;
-  static unsigned long pressStartTime = 0;
-  static bool isPressed = false;
-  static bool longPressTriggered = false;
+  static unsigned long lastCaptureTime = 0;
 
   int rawReading = digitalRead(BUTTON_PIN);
 
@@ -390,36 +399,21 @@ void loop() {
   }
   prevRawReading = rawReading;
 
-  if ((millis() - lastDebounceTime) > 35) {
+  // 30ms Debounce
+  if ((millis() - lastDebounceTime) > 30) {
     if (rawReading != lastStableState) {
       lastStableState = rawReading;
 
+      // Instant Shutter: Trigger IMMEDIATELY when button is pressed down (LOW)
       if (lastStableState == LOW) {
-        isPressed = true;
-        pressStartTime = millis();
-        longPressTriggered = false;
-      } else {
-        if (isPressed) {
-          unsigned long pressDuration = millis() - pressStartTime;
-          isPressed = false;
-
-          // Short press -> Take photo & upload
-          if (!longPressTriggered && pressDuration >= 50 && pressDuration < 1800) {
-            takePhoto();
-          }
+        if (millis() - lastCaptureTime > 2500) {
+          lastCaptureTime = millis();
+          Serial.println("\n[Button] Shutter Clicked (Instant Press)");
+          takePhoto();
         }
       }
     }
   }
 
-  // Long press -> Re-check / reconnect Wi-Fi
-  if (isPressed && !longPressTriggered) {
-    if (millis() - pressStartTime >= 1800) {
-      longPressTriggered = true;
-      Serial.println("\n[Button] Long press -> Checking Wi-Fi status...");
-      connectToWiFi();
-    }
-  }
-
-  delay(15);
+  delay(10);
 }

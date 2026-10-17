@@ -31,6 +31,31 @@ This repository is configured to deploy directly to [Netlify](https://www.netlif
 
 ---
 
+## 💡 LED Status Signals & Guide
+| Status LED (RGB) | Meaning | Description |
+|---|---|---|
+| 🟠 **Amber Blink (1x)** | Booting | System initializing (mounting SD Card & OV5640) |
+| 🩵 **Cyan Blink (3x)** | Ready to Shoot | Camera & Wi-Fi ready, press BOOT to shoot! |
+| ⚡ **White Flash (80ms)** | Shutter Flash | Flash pulses synchronized with camera exposure |
+| 🔵 **Solid Blue** | Cloud Uploading | Saving to SD Card & uploading via HTTPS to Cloudinary |
+| 🟢 **Green Blink (2x)** | Upload Success | Photo uploaded and live in web gallery! |
+| 🔴 **Red Blink (1x)** | Upload Failed | Wi-Fi issue; photo safely stored on MicroSD Card |
+
+---
+
+## 📸 Shooting Tutorial
+1. **Power On**: Plug in USB-C. Wait 2–3s until RGB blinks Cyan 3 times.
+2. **Instant Shutter**: Press BOOT button (GPIO 0).
+   - Zero-lag instant capture (`CAMERA_GRAB_LATEST` with double buffering).
+   - White flash pulses for exposure.
+   - Blue LED glows while photo is saved to MicroSD and uploaded to Cloudinary.
+   - Green blinks twice when ready for the next shot!
+3. **Web Gallery (Netlify)**:
+   - Browse your photos live in retro film contact sheet format.
+   - Choose from legendary Film LUTs: Leica Summicron, Leica Monochrom, Kodak Portra 400, Kodachrome 64, Tri-X 400, Kodak Gold 200, Fuji Superia, Velvia 50, ACROS 100, CineStill 800T, Polaroid SX-70.
+
+---
+
 ## 🛠️ Hardware Pinout (ESP32-S3 WROOM CAM)
 | Function | GPIO |
 |---|---|
