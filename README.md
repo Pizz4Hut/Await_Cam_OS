@@ -52,7 +52,7 @@ This repository is configured to deploy directly to [Netlify](https://www.netlif
    - Green blinks twice when ready for the next shot!
 3. **Web Gallery (Netlify)**:
    - Browse your photos live in retro film contact sheet format.
-   - Choose from legendary Film LUTs: Leica Summicron, Leica Monochrom, Kodak Portra 400, Kodachrome 64, Tri-X 400, Kodak Gold 200, Fuji Superia, Velvia 50, ACROS 100, CineStill 800T, Polaroid SX-70.
+   - Choose from iconic Film LUTs: Wetzlar Summi 50, Wetzlar Monochroma, Port-Tone 400, K-Chrome 64, Street TX-400, Golden Sun 200, Tokyo Super 400, Velvet Nature 50, Acro Noir, Cine 800 Tungsten, Instant SX Faded.
 
 ---
 
