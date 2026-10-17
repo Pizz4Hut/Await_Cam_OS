@@ -35,24 +35,29 @@ This repository is configured to deploy directly to [Netlify](https://www.netlif
 | Status LED (RGB) | Meaning | Description |
 |---|---|---|
 | 🟠 **Amber Blink (1x)** | Booting | System initializing (mounting SD Card & OV5640) |
-| 🩵 **Cyan Blink (3x)** | Ready to Shoot | Camera & Wi-Fi ready, press BOOT to shoot! |
-| ⚡ **White Flash (80ms)** | Shutter Flash | Flash pulses synchronized with camera exposure |
+| 🩵 **Cyan Blink (3x)** | Online Ready | Wi-Fi connected! Photos will upload to Netlify Gallery |
+| 🟠 **Amber Blink (2x)** | Offline Ready | No Wi-Fi found. Camera ready to shoot directly to SD Card instantly! |
+| 🟣 **Solid Magenta / Purple** | Wi-Fi Setup Portal | AP `Later-Cam-Setup` active. Connect with phone to configure Wi-Fi |
+| ⚡ **White Flash (35ms)** | Shutter Flash | Crisp exposure flash pulse (ultra-fast zero-lag capture) |
 | 🔵 **Solid Blue** | Cloud Uploading | Saving to SD Card & uploading via HTTPS to Cloudinary |
-| 🟢 **Green Blink (2x)** | Upload Success | Photo uploaded and live in web gallery! |
-| 🔴 **Red Blink (1x)** | Upload Failed | Wi-Fi issue; photo safely stored on MicroSD Card |
+| 🟢 **Green Blink (2x)** | Snap / Upload Done | Photo secured and ready for next shot! |
+| 🔴 **Red Blink (1x)** | Upload Failed | Network issue; photo remains safely stored on SD Card |
 
 ---
 
-## 📸 Shooting Tutorial
-1. **Power On**: Plug in USB-C. Wait 2–3s until RGB blinks Cyan 3 times.
-2. **Instant Shutter**: Press BOOT button (GPIO 0).
-   - Zero-lag instant capture (`CAMERA_GRAB_LATEST` with double buffering).
-   - White flash pulses for exposure.
-   - Blue LED glows while photo is saved to MicroSD and uploaded to Cloudinary.
-   - Green blinks twice when ready for the next shot!
-3. **Web Gallery (Netlify)**:
-   - Browse your photos live in retro film contact sheet format.
-   - Choose from iconic Film LUTs: Wetzlar Summi 50, Wetzlar Monochroma, Port-Tone 400, K-Chrome 64, Street TX-400, Golden Sun 200, Tokyo Super 400, Velvet Nature 50, Acro Noir, Cine 800 Tungsten, Instant SX Faded.
+## 📸 Shooting & Outdoor Setup Tutorial
+1. **Instant Shutter**: Press BOOT button (GPIO 0).
+   - High-speed 20MHz XCLK OV5640 capture.
+   - Saves to MicroSD Card in under 40ms.
+   - If Online: Uploads to Cloudinary automatically.
+   - If Offline: Bypasses upload with snappy green blink — zero freeze!
+2. **Outdoor Wi-Fi Setup (Phone Hotspot)**:
+   - **Hold BOOT button for 3 seconds** anytime.
+   - LED turns **🟣 Purple/Magenta**.
+   - On your smartphone, connect to Wi-Fi: **`Later-Cam-Setup`**.
+   - Open browser to **`http://192.168.4.1`**.
+   - Tap your phone hotspot or enter new Wi-Fi name & password -> Click **Save**!
+   - Camera restarts and connects to your hotspot automatically.
 
 ---
 
