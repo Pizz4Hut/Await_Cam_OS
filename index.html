@@ -298,7 +298,21 @@
       try {
         const res = await fetch(url);
         if (!res.ok) {
-          if (res.status === 401 || res.status === 404) {
+          if (res.status === 404) {
+            // 404 on Cloudinary simply means 0 photos uploaded with this tag yet (Ready!)
+            alertEl.style.display = "none";
+            countEl.innerText = "00";
+            statusText.innerText = "ม้วนฟิล์มว่าง (พร้อมรับรูปแรก)";
+            grid.innerHTML = `
+              <div class="empty-state">
+                <div class="empty-icon">📷</div>
+                <h3>ปลดล็อค Cloud สำเร็จเรียบร้อยแล้ว! 🎉</h3>
+                <p style="margin-top:8px;">ตอนนี้ม้วนฟิล์มว่างอยู่ กดปุ่ม BOOT บนตัวกล้อง ESP32-S3 เพื่อถ่ายรูปแรกได้เลยครับ รูปจะเด้งขึ้นมาตรงนี้ทันที!</p>
+              </div>
+            `;
+            return;
+          }
+          if (res.status === 401) {
             alertEl.style.display = "block";
           }
           throw new Error(`HTTP ${res.status}`);
