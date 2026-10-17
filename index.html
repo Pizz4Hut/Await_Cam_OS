@@ -199,9 +199,12 @@
       font-size: 0.8rem;
       font-weight: 600;
       text-decoration: none;
-      transition: background 0.2s;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
     }
     .btn-dl:hover { background: var(--accent-hover); }
+    .btn-dl:disabled { opacity: 0.6; cursor: wait; }
     .empty-state {
       text-align: center;
       padding: 80px 20px;
@@ -223,11 +226,41 @@
       padding: 20px;
     }
     .lightbox.active { display: flex; }
+    .lightbox-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 90vw;
+      max-height: 90vh;
+    }
     .lightbox-content {
       max-width: 90vw;
-      max-height: 85vh;
+      max-height: 78vh;
       border-radius: 6px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+      object-fit: contain;
+    }
+    .lightbox-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn-lightbox-dl {
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      transition: all 0.2s;
+    }
+    .btn-lightbox-dl:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
     }
     .lightbox-close {
       position: absolute;
@@ -309,13 +342,38 @@
 
   <div class="lightbox" id="lightbox" onclick="closeLightbox()">
     <span class="lightbox-close">&times;</span>
-    <img class="lightbox-content filter-leica-color" id="lightboxImg" src="">
+    <div class="lightbox-box" onclick="event.stopPropagation()">
+      <img class="lightbox-content filter-leica-color" id="lightboxImg" src="">
+      <div class="lightbox-actions">
+        <button id="lightboxDlBtn" class="btn-lightbox-dl" onclick="downloadLightboxImage()">⬇️ ดาวน์โหลดรูปนี้ (ติดฟิลเตอร์ที่เลือก)</button>
+      </div>
+    </div>
   </div>
 
   <script>
     const CLOUD_NAME = "kv80ayfn";
     const TAG_NAME = "await_cam";
     let currentFilter = "filter-leica-color";
+    let activeLightboxUrl = "";
+    let activeLightboxExp = "";
+
+    // Mapping CSS Filter styles to Canvas 2D ctx.filter
+    const filterStyles = {
+      "filter-leica-color": "contrast(1.22) saturate(1.25) brightness(1.02) sepia(0.08) hue-rotate(-3deg)",
+      "filter-leica-mono":  "grayscale(1) contrast(1.55) brightness(0.95)",
+      "filter-portra400":   "sepia(0.24) contrast(1.10) brightness(1.04) saturate(1.22) hue-rotate(-12deg)",
+      "filter-kodachrome":  "contrast(1.30) saturate(1.48) brightness(0.97) hue-rotate(5deg)",
+      "filter-gold200":     "sepia(0.35) saturate(1.35) contrast(1.15) brightness(1.02) hue-rotate(-18deg)",
+      "filter-trix400":     "grayscale(1) contrast(1.38) brightness(0.93)",
+      "filter-classic-chrome": "contrast(1.20) saturate(0.88) brightness(0.98) sepia(0.12) hue-rotate(-6deg)",
+      "filter-superia":     "contrast(1.16) saturate(1.20) brightness(0.98) hue-rotate(14deg) sepia(0.06)",
+      "filter-velvia":      "contrast(1.38) saturate(1.65) brightness(0.98)",
+      "filter-acros":       "grayscale(1) contrast(1.28) brightness(1.01)",
+      "filter-cinestill":   "contrast(1.25) brightness(1.02) saturate(1.35) hue-rotate(-16deg) sepia(0.20)",
+      "filter-polaroid":    "sepia(0.30) contrast(0.96) brightness(1.08) saturate(1.12) hue-rotate(-8deg)",
+      "filter-ilford":      "grayscale(1) contrast(1.14) brightness(1.02)",
+      "filter-none":        "none"
+    };
 
     async function fetchPhotos() {
       const btn = document.getElementById("btnRefresh");
@@ -327,14 +385,12 @@
       btn.classList.add("loading");
       btn.innerText = "กำลังโหลด...";
 
-      // Cloudinary Resource List endpoint for tag
       const url = `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${TAG_NAME}.json?t=${Date.now()}`;
 
       try {
         const res = await fetch(url);
         if (!res.ok) {
           if (res.status === 404) {
-            // 404 on Cloudinary simply means 0 photos uploaded with this tag yet (Ready!)
             alertEl.style.display = "none";
             countEl.innerText = "00";
             statusText.innerText = "ม้วนฟิล์มว่าง (พร้อมรับรูปแรก)";
@@ -381,7 +437,7 @@
           const expNum = String(resources.length - index).padStart(2, '0');
 
           return `
-            <div class="film-frame" onclick="openLightbox('${imgUrl}')">
+            <div class="film-frame" onclick="openLightbox('${imgUrl}', 'EXP_${expNum}')">
               <div class="photo-container">
                 <img src="${imgUrl}" class="photo-img ${currentFilter}" loading="lazy" alt="Photo ${expNum}">
               </div>
@@ -390,7 +446,7 @@
                   <div class="photo-title">EXP #${expNum}</div>
                   <div class="photo-date">${dateStr}</div>
                 </div>
-                <a href="${imgUrl}" class="btn-dl" download target="_blank" onclick="event.stopPropagation()">⬇️ โหลด</a>
+                <button class="btn-dl" onclick="event.stopPropagation(); downloadPhoto('${imgUrl}', 'EXP_${expNum}', this)">⬇️ โหลด (ติดฟิลเตอร์)</button>
               </div>
             </div>
           `;
@@ -419,7 +475,9 @@
       });
     }
 
-    function openLightbox(url) {
+    function openLightbox(url, expNum) {
+      activeLightboxUrl = url;
+      activeLightboxExp = expNum || "photo";
       const modal = document.getElementById("lightbox");
       const img = document.getElementById("lightboxImg");
       img.src = url;
@@ -429,6 +487,101 @@
 
     function closeLightbox() {
       document.getElementById("lightbox").classList.remove("active");
+    }
+
+    function downloadLightboxImage() {
+      const btn = document.getElementById("lightboxDlBtn");
+      downloadPhoto(activeLightboxUrl, activeLightboxExp, btn);
+    }
+
+    // High-Resolution Filter Baking & Download via HTML5 Canvas
+    async function downloadPhoto(imgUrl, filenameBase, btnEl) {
+      const origText = btnEl ? btnEl.innerText : "";
+      if (btnEl) {
+        btnEl.innerText = "⏳ กำลังเบิร์น...";
+        btnEl.disabled = true;
+      }
+
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        // Append query param to bypass cached non-CORS responses in browser
+        const corsUrl = imgUrl.includes("?") ? `${imgUrl}&cors=1` : `${imgUrl}?cors=1`;
+        img.src = corsUrl;
+
+        await new Promise((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("CORS image load failed"));
+        });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+
+        // Apply matching filter
+        const cssFilter = filterStyles[currentFilter] || "none";
+        if (cssFilter !== "none") {
+          ctx.filter = cssFilter;
+        }
+
+        // Draw image with filter applied directly into pixels
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Add subtle vintage film grain if not raw sensor
+        if (currentFilter !== "filter-none") {
+          addFilmGrain(ctx, canvas.width, canvas.height);
+        }
+
+        // Export high-quality JPEG (95% quality)
+        canvas.toBlob((blob) => {
+          if (!blob) throw new Error("Canvas export failed");
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = blobUrl;
+          const filterSuffix = currentFilter.replace("filter-", "");
+          a.download = `${filenameBase}_${filterSuffix}.jpg`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+          if (btnEl) {
+            btnEl.innerText = "✅ สำเร็จ!";
+            setTimeout(() => { btnEl.innerText = origText; btnEl.disabled = false; }, 1500);
+          }
+        }, "image/jpeg", 0.95);
+
+      } catch (err) {
+        console.warn("Canvas filter baking failed, fallback to direct download:", err);
+        const a = document.createElement("a");
+        a.href = imgUrl;
+        a.download = `${filenameBase}_raw.jpg`;
+        a.target = "_blank";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        if (btnEl) {
+          btnEl.innerText = origText;
+          btnEl.disabled = false;
+        }
+      }
+    }
+
+    function addFilmGrain(ctx, width, height) {
+      try {
+        const imgData = ctx.getImageData(0, 0, width, height);
+        const data = imgData.data;
+        const grainIntensity = 10; // Subtle organic grain
+        for (let i = 0; i < data.length; i += 4) {
+          const noise = (Math.random() - 0.5) * grainIntensity;
+          data[i]     = Math.min(255, Math.max(0, data[i] + noise));
+          data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+          data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } catch (e) {
+        // Safe to ignore if getImageData is restricted
+      }
     }
 
     // Auto fetch on load and every 15s
